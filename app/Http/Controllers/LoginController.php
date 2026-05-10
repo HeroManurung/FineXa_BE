@@ -3,55 +3,86 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth; // Wajib dipanggil untuk fitur Login
+use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    // 1. Fungsi untuk menampilkan halaman form HTML
+    // 1. TAMPILAN WEB
     public function showLoginForm()
     {
         return view('auth.login');
     }
 
-    // 2. Fungsi untuk memproses data saat tombol "Masuk" diklik
+    // 2. PROSES LOGIN (HYBRID: WEB & API)
     public function authenticate(Request $request)
     {
-        // Tahap A: Validasi - Pastikan user mengisi email dan password
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
-        // Cek apakah user mencentang checkbox "Ingat saya" di form login
         $remember = $request->has('remember');
 
-        // Tahap B: Mesin Pengecek (Mencocokkan Kunci ke Database)
+        // Jika Email & Password Cocok!
         if (Auth::attempt($credentials, $remember)) {
-            
-        // Tahap C: Jika sukses, buatkan "Kartu Akses" (Session) baru agar aman dari hacker
+            /** @var \App\Models\User $user */
+            $user = Auth::user();
+            $userRole = $user->role;
+
+            // --- JALUR API (Untuk ReactJS Rian) ---
+            if ($request->wantsJson() || $request->is('api/*')) {
+                // Buatkan Kartu VIP (Token Sanctum)
+                $token = $user->createToken('auth_token')->plainTextToken;
+
+                return response()->json([
+                    'status' => 'success',
+                    'pesan' => 'Login berhasil',
+                    'role' => $userRole,
+                    'token' => $token, // INI YANG PALING DIBUTUHKAN REACTJS!
+                    'data' => $user
+                ]);
+            }
+
+            // --- JALUR WEB (Untuk Presentasi Dosen) ---
             $request->session()->regenerate();
-            
-        // Tahap D: BACA ROLE USER UNTUK MEMBEDAKAN ARAH REDIRECT
-            $userRole = Auth::user()->role; // Ini cara backend tahu jabatannya!
 
-        if ($userRole === 'admin') {
-            // Jika Admin, persilakan masuk ke ruang kontrol (data users)
-            return redirect()->intended('/web/users');
-        } elseif ($userRole === 'investor') {
-            // Jika Investor, arahkan ke halaman mereka sendiri (misal: kuesioner)
-            return redirect()->intended('/web/analisis');
-        }
+            if ($userRole === 'admin') {
+                return redirect()->intended('/web/users');
+            } elseif ($userRole === 'investor') {
+                return redirect()->intended('/web/analisis');
+            }
         }
 
-        // Tahap E: Jika gagal (email/password salah), tendang balik ke halaman form
+        // Jika Email/Password Salah!
+        // --- JALUR API ---
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json([
+                'status' => 'error',
+                'pesan' => 'Email atau Password salah'
+            ], 401); // 401 = Unauthorized
+        }
+
+        // --- JALUR WEB ---
         return back()->withErrors([
             'email' => 'Maaf, Email atau Password yang Anda masukkan salah.',
-        ])->onlyInput('email'); // Biar email yang tadi diketik nggak hilang
+        ])->onlyInput('email');
     }
     
-    // 3. Fungsi untuk Logout (Keluar Sistem)
+    // 3. PROSES LOGOUT (HYBRID: WEB & API)
     public function logout(Request $request)
     {
+        // --- JALUR API ---
+        if ($request->wantsJson() || $request->is('api/*')) {
+            // Hancurkan Kartu VIP (Token) milik user yang sedang login
+            $request->user()->currentAccessToken()->delete();
+            
+            return response()->json([
+                'status' => 'success',
+                'pesan' => 'Berhasil logout dan token dihapus'
+            ]);
+        }
+
+        // --- JALUR WEB ---
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

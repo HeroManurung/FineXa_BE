@@ -48,6 +48,11 @@
             </div>
             
             <button type="submit" class="btn btn-primary w-100">Masuk Sistem</button>
+            
+            <div class="text-center mt-3">
+                <a href="{{ route('password.request') }}" class="text-decoration-none text-primary">Lupa Password?</a>
+            </div>
+
         </form>
     </div>
 </div>

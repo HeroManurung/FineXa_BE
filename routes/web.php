@@ -13,55 +13,85 @@ use App\Http\Controllers\AnalisisController;
 use App\Http\Controllers\FaqController; 
 use App\Http\Controllers\PasswordResetController;
 
+// Halaman awal / Landing Page bawaan Laravel
 Route::get('/', function () {
     return view('welcome');
 });
 
-
-Route::prefix('web')->group(function () {
+// ==========================================
+// 1. AREA TAMU (Guest) - Belum Login
+// ==========================================
+Route::middleware('guest')->group(function () {
     
-    // 1. Assets CRUD 
-    Route::resource('assets', AssetController::class);
-
-    // 3. Profiles (Hanya Read dan Update, karena Create/Delete mengikuti User)
-    Route::get('/profiles', [FinancialProfileController::class, 'index']);
-    Route::get('/profiles/{id}/edit', [FinancialProfileController::class, 'edit']);
-    Route::put('/profiles/{id}', [FinancialProfileController::class, 'update']);
-
-    // 4. Users (Read dan Create)
-    Route::get('/users', [UserController::class, 'index']);
-    
-    // Jalan pintas untuk menampilkan view form registrasi tanpa perlu menambah fungsi di Controller
-    Route::get('/users/create', function () {return view('users.create'); });
-    Route::delete('/users/{id}', [UserController::class, 'destroy']);
-    Route::post('/users', [UserController::class, 'store']);
-
-    // RUTE DASHBOARD / ANALISIS INVESTOR
-    Route::get('/analisis', [AnalisisController::class, 'index']);
-});
-
-// 1. Jalur untuk menampilkan halaman form (Pintu Depan)
+    // Form & Proses Login
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-
-    // 2. Jalur untuk memproses isian form (Menyerahkan KTP ke Satpam)
     Route::post('/login', [LoginController::class, 'authenticate']);
 
-    // 3. Jalur untuk keluar dari sistem (Mengembalikan Kartu Akses)
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
-    // RUTE REGISTER WEB
+    // Form & Proses Register Web
     Route::get('/register', [RegisterController::class, 'showRegistrationForm']);
     Route::post('/register', [RegisterController::class, 'register']);
 
-    // RUTE KUESIONER
-    Route::get('/web/kuesioner', [KuesionerController::class, 'index']);
-    Route::post('/web/kuesioner', [KuesionerController::class, 'simpan']);
+    // 1. Tampilkan Halaman Form Isi Email (Ini yang bikin error tadi)
+    Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])
+        ->name('password.request');
+    // 2. Proses Kirim Link ke Email (POST)
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
+        ->name('password.email');
+    // 3. Tampilkan Halaman Form Ketik Password Baru
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])
+        ->name('password.reset');
+    // 4. Proses Update Password ke Database (POST)
+    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])
+        ->name('password.update');
+    });
 
-    // Rute untuk Admin mengelola FAQ
-    Route::get('/faqs', [FaqController::class, 'index']);
-   
-    // Rute untuk menerima email dari halaman ReactJS tadi
-    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink']);
+
+// ==========================================
+// 2. AREA DALAM GEDUNG (Auth) - Wajib Login
+// ==========================================
+    Route::middleware('auth')->group(function () {
     
-    // Rute untuk memproses perubahan password baru
-    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+    // Pintu Keluar (Logout)
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// ==========================================
+// AREA PRESENTASI BLADE DOSEN (Awalan /web)
+// ==========================================
+    Route::prefix('web')->group(function () {
+        
+        // Dashboard / Analisis Investor
+        Route::get('/analisis', [AnalisisController::class, 'index']);
+
+        // Kuesioner Investor
+        Route::get('/kuesioner', [KuesionerController::class, 'index']);
+        Route::post('/kuesioner', [KuesionerController::class, 'simpan']);
+
+        // Assets CRUD (Pakai resource agar ringkas 1 baris)
+        Route::resource('assets', AssetController::class);
+
+        // Users CRUD
+        Route::get('/users', [UserController::class, 'index']);
+        Route::get('/users/create', function () { return view('users.create'); });
+        Route::post('/users', [UserController::class, 'store']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        Route::get('/users/{id}', [UserController::class, 'show']);   // Untuk lihat detail user
+        Route::put('/users/{id}', [UserController::class, 'update']); // Untuk proses edit user
+
+        // Profiles Finansial (Hanya Baca & Hapus, tidak ada Edit/Update!)
+        Route::get('/profiles', [FinancialProfileController::class, 'index']);
+        Route::get('/profiles/{id}', [FinancialProfileController::class, 'show']);
+        Route::delete('/profiles/{id}', [FinancialProfileController::class, 'destroy']);
+
+        // FAQs CRUD Lengkap
+        Route::get('/faqs', [FaqController::class, 'index']);
+        Route::get('/faqs/create', [FaqController::class, 'create']);
+        Route::post('/faqs', [FaqController::class, 'store']);
+        Route::get('/faqs/{id}', [FaqController::class, 'show']);
+        Route::get('/faqs/{id}/edit', [FaqController::class, 'edit']);
+        Route::put('/faqs/{id}', [FaqController::class, 'update']);
+        Route::delete('/faqs/{id}', [FaqController::class, 'destroy']);
+
+        
+
+    });
+});     

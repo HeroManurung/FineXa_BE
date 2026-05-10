@@ -51,12 +51,22 @@ class RegisterController extends Controller
             // Kolom lainnya biarkan kosong/null dulu untuk diisi saat kuesioner
         ]);
 
-        // Tahap D: Auto-Login
-        // Langsung masukkan user ini ke dalam sistem tanpa perlu login manual
+        // ... (Tahap A, B, C tetap sama)
+
+        // Tahap D: Respon Cerdas (Hybrid)
+        if ($request->wantsJson() || $request->is('api/*')) {
+            // Kalau yang nembak API Rian, kasih JSON
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Akun berhasil dibuat! Silakan login.',
+                'user' => $user
+            ], 201);
+        }
+
+        // Kalau yang nembak Web kamu pas presentasi, jalankan Session
         Auth::login($user);
         $request->session()->regenerate();
 
-        // Tahap E: Arahkan langsung ke halaman Kuesioner
         return redirect('/web/kuesioner')->with('success', 'Akun berhasil dibuat! Silakan isi kuesioner.');
     }
 }

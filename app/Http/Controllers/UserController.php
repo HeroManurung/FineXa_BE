@@ -12,7 +12,9 @@ class UserController extends Controller
 {
     public function index(Request $request) {
         $users = User::all();
-        if ($request->wantsJson()) return response()->json(['status' => 'success', 'data' => $users]);
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['status' => 'success', 'data' => $users]);
+        }
         return view('users.index', compact('users'));
     }
 
@@ -36,34 +38,68 @@ class UserController extends Controller
                 'id_user' => $user->id_user
             ]);
 
-            
-
             DB::commit();
-            if ($request->wantsJson()) return response()->json(['status' => 'success', 'data' => $user], 201);
+
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['status' => 'success', 'data' => $user], 201);
+            }
             return redirect('/web/users')->with('success', 'User dan Profil berhasil dibuat!');
         } catch (\Exception $e) {
             DB::rollback();
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
             return back()->with('error', 'Gagal mendaftar.');
         }
     }
 
-    public function destroy($id)
+    // --- TAMBAHKAN FUNGSI SHOW UNTUK API ---
+    public function show(Request $request, $id) {
+        $user = User::findOrFail($id);
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['status' => 'success', 'data' => $user]);
+        }
+        return view('users.show', compact('user'));
+    }
+
+    // --- TAMBAHKAN FUNGSI UPDATE UNTUK API ---
+    public function update(Request $request, $id) {
+        $user = User::findOrFail($id);
+        
+        $request->validate([
+            'nama_lengkap' => 'sometimes|required',
+            'email' => 'sometimes|required|email|unique:users,email,'.$id.',id_user',
+        ]);
+
+        $user->update($request->all());
+
+        if ($request->wantsJson() || $request->is('api/*')) {
+            return response()->json(['status' => 'success', 'message' => 'User diperbarui', 'data' => $user]);
+        }
+        return redirect('/web/users')->with('success', 'User berhasil diperbarui!');
+    }
+
+    public function destroy(Request $request, $id)
     {
         try {
             $user = User::findOrFail($id);
 
-            // PENTING: Kita harus menghapus "Map" profilnya dulu, 
-            // agar tidak jadi data yatim piatu di database.
-            if ($user->profile) {
-                $user->profile->delete();
+            // Cek relasi (sesuaikan nama di model User, biasanya financialProfile)
+            if ($user->financialProfile) {
+                $user->financialProfile->delete();
             }
 
-            // Setelah profilnya terhapus, baru kita hapus akun usernya
             $user->delete();
 
-            return redirect('/web/users')->with('success', 'User dan seluruh data kuesionernya berhasil dihapus!');
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['status' => 'success', 'message' => 'User berhasil dihapus']);
+            }
+            return redirect('/web/users')->with('success', 'User berhasil dihapus!');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus user: ' . $e->getMessage());
+            if ($request->wantsJson() || $request->is('api/*')) {
+                return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Gagal menghapus user.');
         }
     }
 }

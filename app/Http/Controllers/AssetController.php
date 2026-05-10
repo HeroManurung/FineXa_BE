@@ -14,6 +14,19 @@ class AssetController extends Controller
         return view('assets.index', compact('assets'));
     }
 
+    // SHOW (Baca 1 Data Spesifik)
+    public function show(Request $request, $id) {
+        $asset = Asset::findOrFail($id);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'success', 
+                'data' => $asset
+            ]);
+        }
+        return view('assets.show', compact('asset')); 
+    }
+
     // CREATE VIEW (Hanya untuk Web/Dosen)
     public function create() {
         return view('assets.create');
