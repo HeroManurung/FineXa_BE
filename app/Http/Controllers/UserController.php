@@ -7,6 +7,7 @@ use App\Models\FinancialProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -62,19 +63,46 @@ class UserController extends Controller
         return view('users.show', compact('user'));
     }
 
-    // --- TAMBAHKAN FUNGSI UPDATE UNTUK API ---
+    // --- FUNGSI UPDATE YANG SUDAH DIPERBAIKI ---
     public function update(Request $request, $id) {
         $user = User::findOrFail($id);
         
+        // 1. Validasi Input
         $request->validate([
-            'nama_lengkap' => 'sometimes|required',
-            'email' => 'sometimes|required|email|unique:users,email,'.$id.',id_user',
+            'nama_lengkap' => 'required',
+            'password' => [
+                'nullable', // Boleh dikosongkan kalau cuma mau ganti nama
+                Password::min(6)       // Minimal 6 karakter
+                    ->mixedCase()      // Wajib huruf besar & kecil
+                    ->symbols()        // Wajib ada simbol
+            ]
+        ], [
+            // Pesan Error Bahasa Indonesia (Muncul kalau aturannya dilanggar)
+            'password.min' => 'Password baru minimal harus 6 karakter.',
+            'password.mixed' => 'Password baru harus mengandung huruf besar dan kecil.',
+            'password.symbols' => 'Password baru harus mengandung minimal satu simbol (contoh: @, *, #).'
         ]);
 
-        $user->update($request->all());
+        // 2. Siapkan data yang aman untuk di-update
+        $dataUpdate = [
+            'nama_lengkap' => $request->nama_lengkap,
+        ];
 
+        // 3. Cek apakah user mengisi password baru? Kalau iya, Enkripsi!
+        if ($request->filled('password')) {
+            $dataUpdate['password'] = Hash::make($request->password);
+        }
+
+        // 4. Eksekusi Update
+        $user->update($dataUpdate);
+
+        // 5. Kembalikan Respon
         if ($request->wantsJson() || $request->is('api/*')) {
-            return response()->json(['status' => 'success', 'message' => 'User diperbarui', 'data' => $user]);
+            return response()->json([
+                'status' => 'success', 
+                'message' => 'Profil berhasil diperbarui!', 
+                'data' => $user
+            ]);
         }
         return redirect('/web/users')->with('success', 'User berhasil diperbarui!');
     }

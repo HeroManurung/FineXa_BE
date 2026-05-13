@@ -20,23 +20,31 @@ class KuesionerController extends Controller
     // 2. Memproses data (Hybrid & Smart)
     public function simpan(Request $request)
     {
-        // Tahap A: Validasi Inputan
+        // 1. Validasi HANYA meminta 5 skor angka murni
         $request->validate([
             'skor_waktu' => 'required|integer|between:1,3',
             'skor_risiko' => 'required|integer|between:1,3',
             'skor_kapasitas' => 'required|integer|between:1,3',
             'skor_hutang' => 'required|integer|between:1,3',
             'skor_pengetahuan' => 'required|integer|between:1,3',
-            'profil_risiko' => 'required|string', 
+            // 'profil_risiko' DIHAPUS DARI SINI!
         ]);
 
-        // Tahap B: Mesin Kalkulator Total Poin
+        // 2. Mesin Kalkulator Total Poin
         $totalPoin = $request->skor_waktu + $request->skor_risiko + $request->skor_kapasitas + $request->skor_hutang + $request->skor_pengetahuan;
 
-        // Tahap C: Algoritma CDW (Indeks Risiko 0-100)
+        // 3. Algoritma Penentuan Profil Risiko
+        $profilRisiko = 'Moderat';
+        if ($totalPoin <= 7) {
+            $profilRisiko = 'Konservatif';
+        } elseif ($totalPoin >= 12) {
+            $profilRisiko = 'Agresif';
+        }
+
+        // 4. Algoritma CDW (Indeks Risiko 0-100)
         $riskIndex = (($totalPoin - 5) / 10) * 100;
 
-        // Tahap D: Hitung Persentase Aset
+        // 5. Hitung Persentase Aset
         $persenSaham = $riskIndex * 0.6; 
         $persenPasarUang = (100 - $riskIndex) * 0.7; 
         
@@ -44,11 +52,11 @@ class KuesionerController extends Controller
         $persenObligasi = $sisa * 0.6;
         $persenCampuran = $sisa * 0.4;
 
-        // Tahap E: Simpan atau Perbarui (Jurus updateOrCreate)
+        // 6. Simpan ke Database
         $user = Auth::user(); 
         
         $profile = FinancialProfile::updateOrCreate(
-            ['id_user' => $user->id_user], // Cari berdasarkan ID User
+            ['id_user' => $user->id_user], 
             [
                 'skor_waktu' => $request->skor_waktu,
                 'skor_risiko' => $request->skor_risiko,
@@ -56,7 +64,7 @@ class KuesionerController extends Controller
                 'skor_hutang' => $request->skor_hutang,
                 'skor_pengetahuan' => $request->skor_pengetahuan,
                 'total_poin' => $totalPoin,
-                'profil_risiko' => $request->profil_risiko,
+                'profil_risiko' => $profilRisiko, // Pakai variabel hasil hitungan Backend
                 'persen_saham' => $persenSaham,
                 'persen_pasar_uang' => $persenPasarUang,
                 'persen_obligasi' => $persenObligasi,
@@ -64,7 +72,6 @@ class KuesionerController extends Controller
             ]
         );
 
-        // Tahap F: Respon Hybrid
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json([
                 'status' => 'success',
@@ -75,4 +82,5 @@ class KuesionerController extends Controller
 
         return redirect('/web/analisis')->with('success', 'Kuesioner berhasil disimpan!');
     }
+
 }

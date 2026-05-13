@@ -19,37 +19,35 @@ Route::get('/', function () {
 });
 
 // ==========================================
-// 1. AREA TAMU (Guest) - Belum Login
+// 1. AREA TAMU (Sekarang Bebas Akses Tanpa Satpam Guest!)
 // ==========================================
-Route::middleware('guest')->group(function () {
     
-    // Form & Proses Login
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'authenticate']);
+// Form & Proses Login
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'authenticate']);
 
-    // Form & Proses Register Web
-    Route::get('/register', [RegisterController::class, 'showRegistrationForm']);
-    Route::post('/register', [RegisterController::class, 'register']);
+// Form & Proses Register Web
+Route::get('/register', [RegisterController::class, 'showRegistrationForm']);
+Route::post('/register', [RegisterController::class, 'register']);
 
-    // 1. Tampilkan Halaman Form Isi Email (Ini yang bikin error tadi)
-    Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])
-        ->name('password.request');
-    // 2. Proses Kirim Link ke Email (POST)
-    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
-        ->name('password.email');
-    // 3. Tampilkan Halaman Form Ketik Password Baru
-    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])
-        ->name('password.reset');
-    // 4. Proses Update Password ke Database (POST)
-    Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])
-        ->name('password.update');
-    });
+// 1. Tampilkan Halaman Form Isi Email
+Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])
+    ->name('password.request');
+// 2. Proses Kirim Link ke Email (POST)
+Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
+    ->name('password.email');
+// 3. Tampilkan Halaman Form Ketik Password Baru
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])
+    ->name('password.reset');
+// 4. Proses Update Password ke Database (POST)
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword'])
+    ->name('password.update');
 
 
 // ==========================================
 // 2. AREA DALAM GEDUNG (Auth) - Wajib Login
 // ==========================================
-    Route::middleware('auth')->group(function () {
+Route::middleware('auth')->group(function () {
     
     // Pintu Keluar (Logout)
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -91,7 +89,5 @@ Route::middleware('guest')->group(function () {
         Route::put('/faqs/{id}', [FaqController::class, 'update']);
         Route::delete('/faqs/{id}', [FaqController::class, 'destroy']);
 
-        
-
     });
-});     
+});

@@ -27,11 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/kuesioner', [KuesionerController::class, 'simpan']);
 
     // 3. Kelola FAQ (Admin)
+    Route::get('/faqs', [FaqController::class, 'index']);
     Route::post('/faqs', [FaqController::class, 'store']);
     Route::put('/faqs/{id}', [FaqController::class, 'update']);
     Route::delete('/faqs/{id}', [FaqController::class, 'destroy']);
 
     // 4. Kelola Asset (Admin) - Dipindah ke sini!
+    Route::get('/assets', [App\Http\Controllers\AssetController::class, 'index']);
     Route::post('/assets', [AssetController::class, 'store']);
     Route::put('/assets/{id}', [AssetController::class, 'update']);
     Route::delete('/assets/{id}', [AssetController::class, 'destroy']);

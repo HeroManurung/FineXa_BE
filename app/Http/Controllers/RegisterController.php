@@ -51,15 +51,20 @@ class RegisterController extends Controller
             // Kolom lainnya biarkan kosong/null dulu untuk diisi saat kuesioner
         ]);
 
-        // ... (Tahap A, B, C tetap sama)
+        
 
         // Tahap D: Respon Cerdas (Hybrid)
         if ($request->wantsJson() || $request->is('api/*')) {
-            // Kalau yang nembak API Rian, kasih JSON
+            
+            // 1. MESIN PENCETAK KTP (TOKEN) BEKERJA DI SINI
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            // 2. KEMBALIKAN BALASAN BESERTA KTP-NYA KE REACT
             return response()->json([
                 'status' => 'success',
-                'message' => 'Akun berhasil dibuat! Silakan login.',
-                'user' => $user
+                'message' => 'Akun berhasil dibuat! Silakan lanjut isi kuesioner.',
+                'user' => $user,
+                'token' => $token // <--- INI DIA PENYELAMAT KITA!
             ], 201);
         }
 

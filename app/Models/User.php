@@ -31,15 +31,4 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    /**
-     * Membelokkan link Lupa Password agar mengarah ke frontend ReactJS
-     */
-    public function sendPasswordResetNotification($token)
-    {
-        // Sesuaikan url ini dengan alamat ReactJS kalian yang ada di foto tadi
-        $url = 'http://localhost:5173/atur-ulang-password?token=' . $token . '&email=' . urlencode($this->email);
-
-        $this->notify(new \Illuminate\Auth\Notifications\ResetPassword($url));
-    }
-
 }

@@ -11,6 +11,7 @@ class FinancialProfile extends Model
 
     // Pastikan nama tabelnya sesuai
     protected $table = 'financial_profiles'; 
+    protected $primaryKey = 'id_profil';
 
     // Update daftar VIP sesuai dengan kolom baru di Migration tadi
     protected $fillable = [
