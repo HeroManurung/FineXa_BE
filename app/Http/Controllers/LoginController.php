@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\LoginLog;
 use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
@@ -27,9 +28,17 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             /** @var \App\Models\User $user */
             $user = Auth::user();
+            
+            LoginLog::create([
+                'user_id' => $user->id_user
+            ]);
+
+            $user->update([
+                'last_login_at' => now()
+            ]);
             $userRole = $user->role;
 
-            // --- JALUR API (Untuk ReactJS Rian) ---
+            // --- JALUR API (Untuk ReactJS) ---
             if ($request->wantsJson() || $request->is('api/*')) {
                 // Buatkan Kartu VIP (Token Sanctum)
                 $token = $user->createToken('auth_token')->plainTextToken;

@@ -10,9 +10,11 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\KuesionerController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AdminAnalyticsController;
 
 // ==========================================
-// AREA VIP (Wajib Login / Dijaga Sanctum)
+// (Wajib Login / Dijaga Sanctum)
 // ==========================================
 Route::middleware('auth:sanctum')->group(function () {
     
@@ -31,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/faqs', [FaqController::class, 'store']);
     Route::put('/faqs/{id}', [FaqController::class, 'update']);
     Route::delete('/faqs/{id}', [FaqController::class, 'destroy']);
+    Route::post('/faqs/{id}/track', [FaqController::class, 'trackView']);
 
     // 4. Kelola Asset (Admin) - Dipindah ke sini!
     Route::get('/assets', [App\Http\Controllers\AssetController::class, 'index']);
@@ -52,6 +55,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rute untuk ReactJS membuang Token
     Route::post('/logout', [LoginController::class, 'logout']);
+
+    // rute untuk dashboard admin
+    Route::get('/dashboard-stats', [DashboardController::class, 'index']);
+
+    // rute untuk analytics admin
+    Route::get('/analytics', [AdminAnalyticsController::class, 'index']);
 
 });
 

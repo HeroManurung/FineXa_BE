@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Faq;
+use App\Models\FaqLog; 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class FaqController extends Controller
@@ -45,7 +47,8 @@ class FaqController extends Controller
         $validatedData = $request->validate([
             'kategori' => 'required',
             'pertanyaan' => 'required',
-            'jawaban' => 'required'
+            'jawaban' => 'required',
+            'status' => 'required'
         ]);
 
         $faq = Faq::create($validatedData);
@@ -69,7 +72,8 @@ class FaqController extends Controller
         $validatedData = $request->validate([
             'kategori' => 'required',
             'pertanyaan' => 'required',
-            'jawaban' => 'required'
+            'jawaban' => 'required',
+            'status' => 'required'
         ]);
 
         $faq = Faq::findOrFail($id);
@@ -91,5 +95,19 @@ class FaqController extends Controller
             return response()->json(['status' => 'success', 'message' => 'FAQ berhasil dihapus']);
         }
         return redirect('/web/faqs')->with('success', 'FAQ berhasil dihapus!');
+    }
+    // FUNGSI SENSOR: Mencatat setiap kali FAQ diklik
+    public function trackView($id)
+    {
+        FaqLog::create([
+            'faq_id' => $id,
+            // Jika user login, simpan ID-nya. Jika tidak, simpan sebagai tamu (null)
+            'user_id' => Auth::id() 
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'pesan' => 'Jejak klik berhasil direkam!'
+        ]);
     }
 }

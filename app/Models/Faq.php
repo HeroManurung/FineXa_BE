@@ -13,6 +13,7 @@ class Faq extends Model
     protected $fillable = [
         'kategori',
         'pertanyaan',
-        'jawaban'
+        'jawaban', 
+        'status'
     ];
 }

@@ -12,7 +12,21 @@ use Illuminate\Validation\Rules\Password;
 class UserController extends Controller
 {
     public function index(Request $request) {
-        $users = User::all();
+        // 🚨 JURUS JOIN (Versi Nama Kolom yang Benar) 🚨
+        $users = DB::table('users')
+            ->leftJoin('financial_profiles', 'users.id_user', '=', 'financial_profiles.id_user')
+            ->select(
+                'users.id_user', 
+                'users.nama_lengkap', 
+                'users.email', 
+                'users.role', 
+                'users.created_at', 
+                'users.last_login_at',
+                'financial_profiles.profil_risiko' // 👈 Ini udah diganti pakai bahasa Indonesia!
+            )
+            ->orderBy('users.created_at', 'desc')
+            ->get();
+
         if ($request->wantsJson() || $request->is('api/*')) {
             return response()->json(['status' => 'success', 'data' => $users]);
         }
